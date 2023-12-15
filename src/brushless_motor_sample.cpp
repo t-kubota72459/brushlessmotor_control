@@ -138,16 +138,9 @@ Ticker Cu;
 /*******************************************/
 float PWMDuty = 0;
 /**************Hall Sensor******************/
-unsigned char UVW_in(void)
+uiint8_t UVW_in(void)
 {
-    unsigned char temp8;
-#if 1
-    temp8 = W_in;
-    temp8 = (temp8 + temp8) + V_in; // V
-    temp8 = (temp8 + temp8) + U_in; // U
-
-#endif
-    return temp8;
+    return (uint8_t)( (W_in << 2) | (V_in << 1) | U_in);
 }
 /********Hall Caputure****************/
 void Capture_u()
