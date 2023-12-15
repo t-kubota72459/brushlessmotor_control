@@ -79,7 +79,7 @@ unsigned int Timer_cnt_B_1 = 0;                         // キャプチャの値
 
 float   iu_ad, iv_ad, iw_ad;
 float   Vu_ad, Vv_ad, Vw_ad;
-float   vr1_ad, vr_ad, vr1_ad_p; // vr2_ad;
+float   vr1_ad = 0, vr_ad, vr1_ad_p; // vr2_ad;
 float   Vr_adc_i;  
 float   refu, refv, refw;
 float   curr_ub, curr_vb, curr_wb, curr_u, curr_v, curr_w;
@@ -407,8 +407,9 @@ int main()
     pc.baud(9600);
 
     wait_ms(500);    
-    Vr_adc_i=V_adc.read();  
-     
+    
+    Vr_adc_i = V_adc.read();    // 最初のポジション
+
 #ifdef TickSpeed
     Sp.attach_us(&Speed_PI, Sp_ticktime);
     Sp_tick = 1;
@@ -422,13 +423,13 @@ int main()
     while (1) {
         // wait_us(50);
         // pc.printf("%.3f,%.3f,%.3f \r" ,du,dv,dw);
-        vr_ad = V_adc.read();
+        vr_ad = V_adc.read();   // ループに入ってからのポジション
 
         pc.printf("vr_ad:%.3f, Dir:%d\r\n", vr_ad, Direction.read());
 
         vr1_ad_p = (vr_ad - Vr_adc_i);              // ボリュームを使う場合
         // vr1_ad_p = (vr_ad-Vr_adc_i) * 1.3;       // カート・キットのアクセルを使う場合
-        vr1_ad += (vr1_ad_p - vr1_ad) *0.2;         // 0.1
+        vr1_ad += (vr1_ad_p - vr1_ad) * 0.2;         // 0.1
 
         Timer_cnt_start = uTimer.read_us();         // カウンタ値
 
