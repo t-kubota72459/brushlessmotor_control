@@ -34,6 +34,9 @@ AnalogIn Curr_wi(PC_0);
 // AnalogIn V_adc(PC_2); // Gaibu Potention IHM07
 // AnalogIn V_adc(PA_6); // Gaibu Potention IHM08
 
+//
+// AnalogIn 0.0 ~ 1.0 (1.0 means 3.3V)
+//
 AnalogIn V_adc(PC_2);
 
 InterruptIn  HA(PA_15);
@@ -49,7 +52,7 @@ DigitalIn Direction(PB_8);
 Timer uTimer;
 Timer vTimer;
 Timer wTimer;
-Timer Timer1; 
+Timer Timer1;
 
 AnalogOut SWAVE(PA_4);
 
@@ -421,13 +424,13 @@ int main()
         // pc.printf("%.3f,%.3f,%.3f \r" ,du,dv,dw);
         vr_ad = V_adc.read();
 
-        pc.printf("%.3f\r\n", vr_ad);
+        pc.printf("vr_ad:%.3f, Dir:%d\r\n", vr_ad, Direction.read());
 
         vr1_ad_p = (vr_ad - Vr_adc_i);              // ボリュームを使う場合
         // vr1_ad_p = (vr_ad-Vr_adc_i) * 1.3;       // カート・キットのアクセルを使う場合
         vr1_ad += (vr1_ad_p - vr1_ad) *0.2;         // 0.1
 
-        Timer_cnt_start = uTimer.read_us(); /* カウンタ値 */
+        Timer_cnt_start = uTimer.read_us();         // カウンタ値
 
         if (fabs(vr1_ad) < 0.1f) {
             Speed_SET = Speed_SET0 = Speed_now=0;
@@ -468,7 +471,7 @@ int main()
 
         /*
          * [ 1 ] 速度検出
-        */
+         */
         /* キャプチャ発生 */
         // ここもいっしょじゃん！
         if (Direct_R == 1) {
@@ -628,7 +631,11 @@ int main()
             rt_pwm=1; 
         }
 
+
+#if 0
+        // こっちにはいかない
         if (acc_vol == 0) {     //volume
+            pc.printf("here#0: %d", acc_vol);
             if (vr1_ad > 0.1) {
                 Direct_R = 0;
             } else {
@@ -636,25 +643,17 @@ int main()
             }
 
             if (vr1_ad < -0.1) {
-                Direct_R=1;
+                Direct_R = 1;
             } else {
                 // nop;
             }
         } else {
             // nop;
         }
-
+#endif
         if (acc_vol == 1) {
-            if (Direction == 1) {
-                Direct_R = 0;
-            } else {
-                // nop;
-            }
-            if (Direction == 0) {
-                Direct_R = 1;
-            } else {
-                // nop;
-            }
+            Direct_R = (Direction.read() == 1) ? 0 : 1;
+            pc.printf("here acc_vol: %d, Direct_R: %d, Direction: %d\r\n", acc_vol, Direct_R, Direction.read());
         } else {
             // nop;
         }
@@ -736,7 +735,7 @@ int main()
                 switch (PWM_Drive_M) {
                 case 1:
                     PWM_U.write(0); PWM_V.write(PWMDuty); PWM_W.write(0); 
-                    UL=1; VL = 1; WL= 0;
+                    UL = 1; VL = 1; WL= 0;
                     break;
                 case 2:
                     PWM_U.write(PWMDuty); PWM_V.write(0); PWM_W.write(0);
@@ -746,7 +745,7 @@ int main()
                     PWM_U.write(PWMDuty); PWM_V.write(0); PWM_W.write(0);
                     UL = 1; VL = 0; WL = 1;
                     break;
-                case 4
+                case 4:
                     PWM_U.write(0); PWM_V.write(0); PWM_W.write(PWMDuty);
                     UL = 1; VL = 0; WL = 1;
                     break;
