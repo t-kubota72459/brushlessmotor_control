@@ -512,7 +512,7 @@ int main()
 
     PWM_W.period_us(25);
 
-    pc.baud(128000);
+    pc.baud(9600);
 
     wait_ms(500);
     Vr_adc_i = V_adc.read();
@@ -833,8 +833,8 @@ int main()
             rt_pwm = 1;
         }
 
-        if (acc_vol == 0)
-        { // volume
+        if (acc_vol == 0) // volume
+        {
             if (vr1_ad > 0.1)
             {
                 Direct_R = 0;
@@ -855,9 +855,9 @@ int main()
         {
         }
 
-        if (acc_vol == 1)
-        { // Accel
-            if (Direction == 1)
+        if (acc_vol == 1) // Accel
+        {
+            if (Direction.read() == 1)
             {
                 Direct_R = 0;
             }
@@ -865,13 +865,14 @@ int main()
             {
             }
 
-            if (Direction == 0)
+            if (Direction.read() == 0)
             {
                 Direct_R = 1;
             }
             else
             {
             }
+            pc.printf("here#:Direction %d, Direct_R:%d\r\n", Direction.read(), Direct_R);
         }
         else
         {
