@@ -131,7 +131,10 @@ float kiSpeed = 0.8;    /* 積分ゲイン 0,2;*/
 float s_kiSpeed = 0.0;  /* 積分器中身 */
 float Speed_diff_norm = 0.0;
 float Ajust = 0.7; // Nrpm_S回転速度計算値の調整
-/*******Ticker*********************/
+
+/*
+ * タイマー割り込み
+ */
 Ticker Sp;
 Ticker Cu;
 
@@ -500,9 +503,7 @@ int main()
     wTimer.start();
 
     PWM_U.period_us(25); // 25
-
     PWM_V.period_us(25);
-
     PWM_W.period_us(25);
 
     pc.baud(9600);
@@ -531,7 +532,7 @@ int main()
 
         Timer_cnt_start = uTimer.read_us(); /* カウンタ値 */
 
-        if (fabs(vr1_ad) < 0.1f)
+        if (fabs(vr1_ad) < 0.1f)    // 変化が微小なとき
         {
 
             Speed_SET = 0.0;
@@ -563,6 +564,7 @@ int main()
         {
         }
 
+	// どちらも同じ！？
         if (Direct_R > 0)
         {
             curr_ub = Curr_ui.read();
@@ -586,6 +588,7 @@ int main()
 
         /* キャプチャ発生 */
 
+	// どちらも同じ！？
         if (Direct_R == 1)
         { // 1
             HA.rise(&Hall_u);
@@ -616,7 +619,7 @@ int main()
         {
             if (Speed_now > Speed_SET0)
             {
-                Speed_now -= Decel_dN;
+                Speed_now -= Decel_dN;	// 1.0
                 if (Speed_now < Speed_SET0)
                 {
                     Speed_now = Speed_SET0;
@@ -631,7 +634,7 @@ int main()
 
             if (Speed_now < Speed_SET0)
             {
-                Speed_now += Accel_dN;
+                Speed_now += Accel_dN;	// 1.0
                 if (Speed_now > Speed_SET0)
                 {
                     Speed_now = Speed_SET0;
@@ -660,6 +663,8 @@ int main()
         Speed_diff = (Speed_SET - Nrpm_s * Ajust);
         Speed_diff_norm = Speed_diff / Speed_MAX; //正規化
 
+	// ここは実行されない
+	// Ticker で起動される
         if (Sp_tick == 0)
         {
             /* ----------- */
@@ -766,7 +771,8 @@ int main()
         /* ----------- */
         /* CurrentのPI制御 */
         /* ----------- */
-
+        // ここは起動されない
+	// Ticker で起動される
         if (Cu_tick == 0)
         {
             I_diff = (I_PI - (I_detect - 0.5)) * I_PII;
