@@ -35,7 +35,7 @@ AnalogIn Curr_wi(PC_0);
 // AnalogIn V_adc(PC_2);        // Gaibu Potention IHM07
 // AnalogIn V_adc(PA_6);        // Gaibu Potention IHM08
 AnalogIn V_adc(PC_2);           // Gaibu Potention CQInv_KIT
-AnalogIn hCurrent(PA_2);        // Current value for Motor
+
 
 InterruptIn HA(PA_15);
 InterruptIn HB(PB_3);
@@ -55,6 +55,13 @@ Timer Timer1;
 AnalogOut SWAVE(PA_4);
 
 Serial pc(PC_10, PC_11);
+
+/*
+ * Hiroshima Pref. College modifications
+ */
+#define OFFSET 0.74
+#define CURRENT_SENSOR_MAX 25.0     // Current sorsor setting of maximum is 25[A]
+AnalogIn hCurrent(PA_2);            // Current value for Motor
 
 /*************************************************************/
 unsigned char acc_vol = 1;                  //オプション１ acc_vol==0 はVolume acc_vol==1はAccel
@@ -119,7 +126,7 @@ float I_detect = 0;
 float Vpi = 0;
 
 /*
- *     速度制御
+ * 速度制御
  */
 float kaiten = 0;
 float Speed_diff = 0.0;                     // 速度誤差
@@ -146,12 +153,14 @@ uint8_t UVW_in(void)
     return (uint8_t)((W_in << 2) | (V_in << 1) | U_in);
 }
 
-/********Hall Caputure****************/
+/*
+ * Hall Caputure
+ */
 void Capture_u()
 {
     Timer_cnt_A = uTimer.read_us();
-    Timer_FLG = 1;                /* キャプチャ発生フラグ */
-    Timer_cnt_Hole = Timer_cnt_A; /**/
+    Timer_FLG = 1;                          // キャプチャ発生フラグ
+    Timer_cnt_Hole = Timer_cnt_A;
 
     t_cnt = Timer_cnt_A - Timer_cnt_A_1;
     if (t_cnt < 1) {
@@ -160,7 +169,7 @@ void Capture_u()
     }
     Nrpm = (float)(5000000 / t_cnt);
     if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) { /* 速度異常 */
+        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -172,17 +181,17 @@ void Capture_v()
 {
     Timer_cnt_B = vTimer.read_us();
 
-    Timer_FLG = 1;                /* キャプチャ発生フラグ */
-    Timer_cnt_Hole = Timer_cnt_B; /**/
+    Timer_FLG = 1;                          // キャプチャ発生フラグ
+    Timer_cnt_Hole = Timer_cnt_B;
 
     t_cnt = Timer_cnt_B - Timer_cnt_B_1;
     if (t_cnt < 1) {
         t_cnt = 1;
     } else {
     }
-    Nrpm = (float)(5000000 / t_cnt);  // P=8
+    Nrpm = (float)(5000000 / t_cnt);        // P=8
     if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) { /* 速度異常 */
+        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -194,8 +203,8 @@ void Capture_w()
 {
     Timer_cnt_C = wTimer.read_us();
 
-    Timer_FLG = 1;                /* キャプチャ発生フラグ */
-    Timer_cnt_Hole = Timer_cnt_C; /**/
+    Timer_FLG = 1;                          // キャプチャ発生フラグ
+    Timer_cnt_Hole = Timer_cnt_C;
 
     t_cnt = Timer_cnt_C - Timer_cnt_C_1;
     if (t_cnt < 1) {
@@ -204,7 +213,7 @@ void Capture_w()
     }
     Nrpm = (float)(5000000 / t_cnt);
     if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) { /* 速度異常 */
+        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -212,9 +221,10 @@ void Capture_w()
     Timer_cnt_C_1 = Timer_cnt_C;
 }
 
-/*********************************************/
 
-/* Hall_uにキャプチャ発生 */
+/*
+ * Hall_u にキャプチャ発生
+ */
 void Hall_u()
 {
     if (rt_pwm == 1) {
@@ -265,7 +275,9 @@ void Hall_ul()
     Capture_u();  //速度計算へ
 }
 
-/* Hall_vにキャプチャ発生 */
+/*
+ * Hall_vにキャプチャ発生
+ */
 void Hall_v()
 {
     if (rt_pwm == 1) {
@@ -316,7 +328,9 @@ void Hall_vl()
     Capture_v();  //速度計算へ
 }
 
-/* Hall_Wにキャプチャ発生 */
+/*
+ * Hall_Wにキャプチャ発生
+ */
 void Hall_w()
 {
     if (rt_pwm == 1) {
@@ -366,11 +380,11 @@ void Hall_wl()
     Capture_w();  //速度計算へ
 }
 
-/****************************************/
-void Speed_PI() {
-    /* ----------- */
-    /* SpeedのPI制御 */
-    /* ----------- */
+/*
+ * SpeedのPI制御
+ */
+void Speed_PI()
+{
     s_kiSpeed += kiSpeed * Speed_diff;
     if (s_kiSpeed > IMAX_SET) {
         s_kiSpeed = IMAX_SET;
@@ -392,8 +406,9 @@ void Speed_PI() {
         }
     }
 }
-/***********************************/
-void Current_PI() {
+
+void Current_PI()
+{
     I_diff = (I_PI - (I_detect - 0.5)) * I_PII;
     s_kiCurrent += kiCurrent * (I_diff);
     if (s_kiCurrent > VMAX_SET) {
@@ -417,6 +432,9 @@ void Current_PI() {
     }
 }
 
+/*
+ * h_calc_average: calculate average of current value working motor.
+ */
 float h_calc_average(float *x, int elem)
 {
     float sum = 0.0;
