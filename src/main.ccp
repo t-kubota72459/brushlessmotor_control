@@ -35,7 +35,7 @@ AnalogIn Curr_wi(PC_0);
 // AnalogIn V_adc(PC_2);        // Gaibu Potention IHM07
 // AnalogIn V_adc(PA_6);        // Gaibu Potention IHM08
 AnalogIn V_adc(PC_2);           // Gaibu Potention CQInv_KIT
-AnalogIn hCurrent(PA_2);      // Current value for Motor
+AnalogIn hCurrent(PA_2);        // Current value for Motor
 
 InterruptIn HA(PA_15);
 InterruptIn HB(PB_3);
@@ -147,7 +147,8 @@ uint8_t UVW_in(void)
 }
 
 /********Hall Caputure****************/
-void Capture_u() {
+void Capture_u()
+{
     Timer_cnt_A = uTimer.read_us();
     Timer_FLG = 1;                /* キャプチャ発生フラグ */
     Timer_cnt_Hole = Timer_cnt_A; /**/
@@ -167,7 +168,8 @@ void Capture_u() {
     Timer_cnt_A_1 = Timer_cnt_A;
 }
 
-void Capture_v() {
+void Capture_v()
+{
     Timer_cnt_B = vTimer.read_us();
 
     Timer_FLG = 1;                /* キャプチャ発生フラグ */
@@ -188,7 +190,8 @@ void Capture_v() {
     Timer_cnt_B_1 = Timer_cnt_B;
 }
 
-void Capture_w() {
+void Capture_w()
+{
     Timer_cnt_C = wTimer.read_us();
 
     Timer_FLG = 1;                /* キャプチャ発生フラグ */
@@ -212,7 +215,8 @@ void Capture_w() {
 /*********************************************/
 
 /* Hall_uにキャプチャ発生 */
-void Hall_u() {
+void Hall_u()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(PWMDuty);
@@ -235,7 +239,9 @@ void Hall_u() {
     }
     Capture_u();  //速度計算へ
 }
-void Hall_ul() {
+
+void Hall_ul()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(0);
@@ -260,7 +266,8 @@ void Hall_ul() {
 }
 
 /* Hall_vにキャプチャ発生 */
-void Hall_v() {
+void Hall_v()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(0);
@@ -284,7 +291,8 @@ void Hall_v() {
     Capture_v();  //速度計算へ
 }
 
-void Hall_vl() {
+void Hall_vl()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(0);
@@ -307,8 +315,10 @@ void Hall_vl() {
     }
     Capture_v();  //速度計算へ
 }
+
 /* Hall_Wにキャプチャ発生 */
-void Hall_w() {
+void Hall_w()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(0);
@@ -330,7 +340,9 @@ void Hall_w() {
     }
     Capture_w();  //速度計算へ
 }
-void Hall_wl() {
+
+void Hall_wl()
+{
     if (rt_pwm == 1) {
         if (Direct_R == 0) {
             PWM_U.write(PWMDuty);
@@ -353,6 +365,7 @@ void Hall_wl() {
     }
     Capture_w();  //速度計算へ
 }
+
 /****************************************/
 void Speed_PI() {
     /* ----------- */
