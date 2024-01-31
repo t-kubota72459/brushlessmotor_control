@@ -102,7 +102,7 @@ unsigned int Timer_FLG = 0;                 // キャプチャあり/なし, 1/0
 unsigned int Timer_cnt_start = 0;           // サンプル開始時のカウンタ値
 unsigned int Timer_cnt_Hole = 0;            // キャプチャ時ののカウンタ値
 
-unsigned char UVW;
+uint8_t UVW;
 unsigned char U, V, W;
 unsigned char PWM_Drive_M = 1;              // PWMモード
 unsigned char Direct_R = 1;                 // Direct_R -> 1:正転，0:逆転
@@ -138,16 +138,12 @@ Ticker Cu;
 /*******************************************/
 float PWMDuty = 0;
 
-/**************Hall Sensor******************/
-unsigned char UVW_in(void)
+/*
+ * Hall sensors
+ */
+uint8_t UVW_in(void)
 {
-//  unsigned char temp8;
-//  #if 1
-//  temp8 = W_in;
-//  temp8 = (temp8 + temp8) + V_in;  // V
-//  temp8 = (temp8 + temp8) + U_in;  // U
-//  #endif
-    return (unsigned char)(((unsigned char)(W_in << 2)) | ((unsigned char)(V_in << 1)) | U_in);
+    return (uint8_t)((W_in << 2) | (V_in << 1) | U_in);
 }
 
 /********Hall Caputure****************/
@@ -408,7 +404,7 @@ void Current_PI() {
     }
 }
 
-float ht_heikin(float *x, int elem)
+float h_calc_average(float *x, int elem)
 {
     float sum = 0.0;
     for (int i = 0; i < elem; i++)
@@ -421,7 +417,7 @@ float ht_heikin(float *x, int elem)
 /********main***********/
 int main() 
 {
-    float ht_current_array[100];
+    float h_current_array[100];
     int index = 0;
 
     Timer1.start();
@@ -458,11 +454,11 @@ int main()
         // vr1_ad_p=(vr_ad-Vr_adc_i)*1.3; //カート・キットのアクセルを使う場合
         vr1_ad += (vr1_ad_p - vr1_ad) * 0.2;  // 0.1
 
-        ht_current_array[index++] = ht_Current.read();
+        h_current_array[index++] = hCurrent.read();
         if (index == 100) {
             index = 0;
         }
-        pc.printf("vr_ad=%.3f, ave=%.3f\r\n", vr_ad, ht_heikin(ht_current_array, 100));
+        pc.printf("vr_ad=%.3f, ave=%.3f\r\n", vr_ad, h_calc_average(h_current_array, 100));
         //pc.printf("vr_ad=%.5f, curr=%.5f\r\n", vr_ad, 0.0);
 
         Timer_cnt_start = uTimer.read_us(); /* カウンタ値 */
