@@ -8,16 +8,18 @@
 /****************PI制御正規化*******************************/
 /***************Ajust=0.7; //Nrpm_S回転速度計算値の調整******/
 /*******************20210526*******************************/
+
 #include "mbed.h"
 #include <math.h>
 #define VMAX_SET 1.0 /* PI制御最大電圧指令0.0〜1.0 */
 #define IMAX_SET 0.4 /* PI制御最大電流指令0.0〜1.0 */
 
 /**********PI制御周期設定*********************/
-/***コメントアウトでPI周期制御無し***********/
+/*
+ * コメントアウトでPI周期制御無し
+ */
 #define TickSpeed
 #define TickCurrent
-/*****************************************/
 
 PwmOut PWM_U(PA_8);
 PwmOut PWM_V(PA_9);
@@ -35,7 +37,6 @@ AnalogIn Curr_wi(PC_0);
 // AnalogIn V_adc(PC_2);        // Gaibu Potention IHM07
 // AnalogIn V_adc(PA_6);        // Gaibu Potention IHM08
 AnalogIn V_adc(PC_2);           // Gaibu Potention CQInv_KIT
-
 
 InterruptIn HA(PA_15);
 InterruptIn HB(PB_3);
@@ -60,7 +61,7 @@ Serial pc(PC_10, PC_11);
  * Hiroshima Pref. College modifications
  */
 #define OFFSET 0.74
-#define CURRENT_SENSOR_MAX 25.0     // Current sorsor setting of maximum is 25[A]
+#define CURRENT_SENSOR_MAX 25.0     // Current sensor setting of maximum is 25[A]
 AnalogIn hCurrent(PA_2);            // Current value for Motor
 
 /*************************************************************/
@@ -89,7 +90,7 @@ float Vu_ad, Vv_ad, Vw_ad;
 float vr1_ad, vr_ad, vr1_ad_p;  // vr2_ad;
 float Vr_adc_i;
 float refu, refv, refw;
-float curr_ub, curr_vb, curr_wb, curr_u, curr_v, curr_w;
+float curr_u, curr_v, curr_w;
 
 float Nrpm = 0;                             // 回転数[r/min]
 float Nrpm_Previous = 0;                    // 回転数[r/min] old
@@ -104,10 +105,9 @@ float Speed_mini = 300;
 float Speed_err_MAX = 10000;
 
 /* ↓正弦波駆動に向けて追加 */
-
-unsigned int Timer_FLG = 0;                 // キャプチャあり/なし, 1/0
-unsigned int Timer_cnt_start = 0;           // サンプル開始時のカウンタ値
-unsigned int Timer_cnt_Hole = 0;            // キャプチャ時ののカウンタ値
+unsigned int Timer_FLG = 0;                 // キャプチャあり/なし, 1/0  ** 未使用 **
+unsigned int Timer_cnt_start = 0;           // サンプル開始時のカウンタ値 ** 未使用 **
+unsigned int Timer_cnt_Hole = 0;            // キャプチャ時ののカウンタ値 ** 未使用 **
 
 uint8_t UVW;
 unsigned char U, V, W;
@@ -115,7 +115,7 @@ unsigned char PWM_Drive_M = 1;              // PWMモード
 unsigned char Direct_R = 1;                 // Direct_R -> 1:正転，0:逆転
 
 /*
- *     電流制御     
+ * 電流制御
  */
 float kpCurrent = 0.000522;                 // 比例ゲイン
 float kiCurrent = 0.00022;                  // 積分ゲイン
@@ -159,8 +159,6 @@ uint8_t UVW_in(void)
 void Capture_u()
 {
     Timer_cnt_A = uTimer.read_us();
-    Timer_FLG = 1;                          // キャプチャ発生フラグ
-    Timer_cnt_Hole = Timer_cnt_A;
 
     t_cnt = Timer_cnt_A - Timer_cnt_A_1;
     if (t_cnt < 1) {
@@ -168,8 +166,7 @@ void Capture_u()
     } else {
     }
     Nrpm = (float)(5000000 / t_cnt);
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
+    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -181,17 +178,13 @@ void Capture_v()
 {
     Timer_cnt_B = vTimer.read_us();
 
-    Timer_FLG = 1;                          // キャプチャ発生フラグ
-    Timer_cnt_Hole = Timer_cnt_B;
-
     t_cnt = Timer_cnt_B - Timer_cnt_B_1;
     if (t_cnt < 1) {
         t_cnt = 1;
     } else {
     }
     Nrpm = (float)(5000000 / t_cnt);        // P=8
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
+    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -203,17 +196,13 @@ void Capture_w()
 {
     Timer_cnt_C = wTimer.read_us();
 
-    Timer_FLG = 1;                          // キャプチャ発生フラグ
-    Timer_cnt_Hole = Timer_cnt_C;
-
     t_cnt = Timer_cnt_C - Timer_cnt_C_1;
     if (t_cnt < 1) {
         t_cnt = 1;
     } else {
     }
     Nrpm = (float)(5000000 / t_cnt);
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) &&
-        ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
+    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
         Nrpm_Previous = Nrpm;
     } else {
         Nrpm = Nrpm_Previous;
@@ -445,7 +434,9 @@ float h_calc_average(float *x, int elem)
     return sum / elem;
 }
 
-/********main***********/
+/*
+ * main 関数
+ */
 int main() 
 {
     float h_current_array[100];
@@ -456,11 +447,16 @@ int main()
     vTimer.start();
     wTimer.start();
 
-    PWM_U.period_us(25);  // 25
-
+    PWM_U.period_us(25);
     PWM_V.period_us(25);
-
     PWM_W.period_us(25);
+
+    HA.rise(&Hall_u);
+    HA.fall(&Hall_ul);
+    HB.rise(&Hall_v);
+    HB.fall(&Hall_vl);
+    HC.rise(&Hall_w);
+    HC.fall(&Hall_wl);
 
     pc.baud(115200);
 
@@ -481,18 +477,17 @@ int main()
         // wait_us(50); //20
         
         vr_ad = V_adc.read();
-        vr1_ad_p = (vr_ad - Vr_adc_i);  //ボリュームを使う場合
-        // vr1_ad_p=(vr_ad-Vr_adc_i)*1.3; //カート・キットのアクセルを使う場合
-        vr1_ad += (vr1_ad_p - vr1_ad) * 0.2;  // 0.1
+        vr1_ad_p = (vr_ad - Vr_adc_i);          //ボリュームを使う場合
+        // vr1_ad_p=(vr_ad-Vr_adc_i)*1.3;       //カート・キットのアクセルを使う場合
+        vr1_ad += (vr1_ad_p - vr1_ad) * 0.2;    // 0.1
 
         h_current_array[index++] = hCurrent.read();
         if (index == 100) {
             index = 0;
         }
-        pc.printf("vr_ad=%.3f, ave=%.3f\r\n", vr_ad, h_calc_average(h_current_array, 100));
-        //pc.printf("vr_ad=%.5f, curr=%.5f\r\n", vr_ad, 0.0);
+        pc.printf("vr_ad=%.3f, Nrpm=%.3f, Speed_SET=%.3f, PWMDuty=%.3f, Vpi=%.3f, ave=%.3f\r", vr_ad, Nrpm_s, Speed_SET, PWMDuty, Vpi, h_calc_average(h_current_array, 100));
 
-        Timer_cnt_start = uTimer.read_us(); /* カウンタ値 */
+        // Timer_cnt_start = uTimer.read_us();     // カウンタ値
 
         if (fabs(vr1_ad) < 0.1f) {
             Speed_SET = 0.0;
@@ -519,53 +514,28 @@ int main()
             Vpi = 0;
             kaiten = 0;
             rt_pwm = 0;
-
-        } else {
         }
 
-        if (Direct_R > 0) {
-            curr_ub = Curr_ui.read();
-            curr_vb = Curr_vi.read();
-            curr_wb = Curr_wi.read();
-        } else {
-            curr_ub = Curr_ui.read();
-            curr_vb = Curr_vi.read();
-            curr_wb = Curr_wi.read();
-        }
-
-        curr_u += ((curr_ub)-curr_u) * 0.1;
-        curr_v += ((curr_vb)-curr_v) * 0.1;
-        curr_w += ((curr_wb)-curr_w) * 0.1;
+        curr_u += (Curr_ui.read() - curr_u) * 0.1;
+        curr_v += (Curr_vi.read() - curr_v) * 0.1;
+        curr_w += (Curr_wi.read() - curr_w) * 0.1;
 
         /* *********************************************** */
         /* [ 1 ] 速度検出↓ */
         /* *********************************************** */
-
-        /* キャプチャ発生 */
-
-        if (Direct_R == 1) {  // 1
-            HA.rise(&Hall_u);
-            HA.fall(&Hall_ul);
-            HB.rise(&Hall_v);
-            HB.fall(&Hall_vl);
-            HC.rise(&Hall_w);
-            HC.fall(&Hall_wl);
-        }
-        if (Direct_R == 0) {  // 0
-            HA.rise(&Hall_u);
-            HA.fall(&Hall_ul);
-            HB.rise(&Hall_v);
-            HB.fall(&Hall_vl);
-            HC.rise(&Hall_w);
-            HC.fall(&Hall_wl);
-        }
-
+        // 割込み処理により速度を測定
+        // HA.rise(&Hall_u);
+        // HA.fall(&Hall_ul);
+        // HB.rise(&Hall_v);
+        // HB.fall(&Hall_vl);
+        // HC.rise(&Hall_w);
+        // HC.fall(&Hall_wl);
+        // 現在の回転速度 Nrpm を計算
         Nrpm_s = Nrpm;
 
         /* *********************************************** */
         /* [ 2 ] 速度制御 ↓ */
         /* *********************************************** */
-
         Speed_SET0 = fabs(Speed_MAX * vr1_ad);
         if (Speed_SET0 > 0) {
             if (Speed_now > Speed_SET0) {
@@ -597,10 +567,11 @@ int main()
         Speed_diff = (Speed_SET - Nrpm_s * Ajust);
         Speed_diff_norm = Speed_diff / Speed_MAX;  //正規化
 
+#ifndef TickSpeed
+        /*
+         * SpeedのPI制御
+         */
         if (Sp_tick == 0) {
-            /* ----------- */
-            /* SpeedのPI制御 */
-            /* ----------- */
             s_kiSpeed += kiSpeed * Speed_diff_norm;
             if (s_kiSpeed > IMAX_SET) {
                 s_kiSpeed = IMAX_SET;
@@ -623,7 +594,7 @@ int main()
             }
         } else {
         }
-
+#endif
         /* *********************************************** */
         /* [ 3 ] 電流制御 */
         /* *********************************************** */
@@ -681,10 +652,10 @@ int main()
             }
         }
 
-        /* ----------- */
-        /* CurrentのPI制御 */
-        /* ----------- */
-
+#ifndef TickCurrent
+        /*
+         * CurrentのPI制御
+         */
         if (Cu_tick == 0) {
             I_diff = (I_PI - (I_detect - 0.5)) * I_PII;
             s_kiCurrent += kiCurrent * I_diff;
@@ -709,6 +680,7 @@ int main()
             }
         } else {
         }
+#endif
 
         kaiten = fabs(Nrpm_s);
 
@@ -717,6 +689,7 @@ int main()
         I_PII = 1.0;  // Speed or Duty Control
         // I_PII=fabs(vr1_ad);//Current Control
         // PWMDuty = Vpi;// 0.381667 Speed or Current Control
+
         PWMDuty = fabs(vr1_ad) * Vpi;  // Duty Control
         /**************************************************/
 
@@ -744,23 +717,20 @@ int main()
         if (acc_vol == 1) {  // Accel
             if (Direction == 1) {
                 Direct_R = 0;
-
             } else {
             }
 
             if (Direction == 0) {
                 Direct_R = 1;
-
             } else {
             }
         } else {
         }
 
-        /* ------------ */
-        /* モードの更新 */
-        /* ------------ */
-
-        UVW = UVW_in(); /* センサ付・ホールIC信号 */
+        /*
+         * モードの更新
+         */
+        UVW = UVW_in();     // センサ付・ホールIC信号
 
 #if 1
         if (Direct_R == 1) {
