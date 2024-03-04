@@ -51,7 +51,6 @@ DigitalIn Direction(PB_8);
 Timer uTimer;
 Timer vTimer;
 Timer wTimer;
-Timer Timer1;
 
 AnalogOut SWAVE(PA_4);
 
@@ -68,15 +67,6 @@ unsigned char rt_pwm;                       // ホールセンサエッジ割り
 /*************************************************************/
 
 unsigned char HUVW;                         // サンプリング開始時のHole ICの状態
-
-unsigned int t_cnt = 0;                     // キャプチャ間のcnt数
-
-unsigned int Timer_cnt_C = 0;               // キャプチャの値
-unsigned int Timer_cnt_A = 0;               // キャプチャの値
-unsigned int Timer_cnt_B = 0;               // キャプチャの値
-unsigned int Timer_cnt_C_1 = 0;             // キャプチャの値old
-unsigned int Timer_cnt_A_1 = 0;             // キャプチャの値old
-unsigned int Timer_cnt_B_1 = 0;             // キャプチャの値old
 
 float iu_ad, iv_ad, iw_ad;
 float Vu_ad, Vv_ad, Vw_ad;
@@ -116,11 +106,6 @@ struct hCurrentData
 };
 
 hCurrentData hcurr = {12000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-
-/* ↓正弦波駆動に向けて追加 */
-unsigned int Timer_FLG = 0;                 // キャプチャあり/なし, 1/0  ** 未使用 **
-unsigned int Timer_cnt_start = 0;           // サンプル開始時のカウンタ値 ** 未使用 **
-unsigned int Timer_cnt_Hole = 0;            // キャプチャ時ののカウンタ値 ** 未使用 **
 
 uint8_t UVW;
 unsigned char U, V, W;
@@ -172,54 +157,65 @@ uint8_t UVW_in(void)
  */
 void Capture_u()
 {
+    static unsigned int Timer_cnt_A = 0;
+    static unsigned int Timer_cnt_A_1 = 0;
+    unsigned int t_cnt;
+    float rpm = 0.0f;
+    
     Timer_cnt_A = uTimer.read_us();
-
     t_cnt = Timer_cnt_A - Timer_cnt_A_1;
     if (t_cnt < 1) {
         t_cnt = 1;
-    } else {
     }
-    Nrpm = (float)(5000000.0f / t_cnt);
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
-        Nrpm_Previous = Nrpm;
-    } else {
-        Nrpm = Nrpm_Previous;
+
+    rpm = 5000000.0f / t_cnt;
+    Nrpm = Nrpm_Previous;
+    if (fabs(rpm - Nrpm_Previous) < Speed_err_MAX) {
+        Nrpm_Previous = rpm;
     }
     Timer_cnt_A_1 = Timer_cnt_A;
 }
 
 void Capture_v()
 {
+    static unsigned int Timer_cnt_B = 0;
+    static unsigned int Timer_cnt_B_1 = 0;
+    unsigned int t_cnt;
+    float rpm = 0.0f;
+
     Timer_cnt_B = vTimer.read_us();
 
     t_cnt = Timer_cnt_B - Timer_cnt_B_1;
     if (t_cnt < 1) {
         t_cnt = 1;
-    } else {
     }
-    Nrpm = (float)(5000000.0f / t_cnt);        // P=8
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
-        Nrpm_Previous = Nrpm;
-    } else {
-        Nrpm = Nrpm_Previous;
+
+    rpm = 5000000.0f / t_cnt;
+    Nrpm = Nrpm_Previous;
+    if (fabs(rpm - Nrpm_Previous) < Speed_err_MAX) {
+        Nrpm_Previous = rpm;
     }
     Timer_cnt_B_1 = Timer_cnt_B;
 }
 
 void Capture_w()
 {
+    static unsigned int Timer_cnt_C = 0;
+    static unsigned int Timer_cnt_C_1 = 0;
+    unsigned int t_cnt;
+    float rpm = 0.0f;
+
     Timer_cnt_C = wTimer.read_us();
 
     t_cnt = Timer_cnt_C - Timer_cnt_C_1;
     if (t_cnt < 1) {
         t_cnt = 1;
-    } else {
     }
-    Nrpm = (float)(5000000.0f / t_cnt);
-    if (((Nrpm - Nrpm_Previous) < Speed_err_MAX) && ((Nrpm - Nrpm_Previous) > (-Speed_err_MAX))) {      // 速度異常
-        Nrpm_Previous = Nrpm;
-    } else {
-        Nrpm = Nrpm_Previous;
+
+    rpm = 5000000.0f / t_cnt;
+    Nrpm = Nrpm_Previous;
+    if (fabs(rpm - Nrpm_Previous) < Speed_err_MAX) {
+        Nrpm_Previous = rpm;
     }
     Timer_cnt_C_1 = Timer_cnt_C;
 }
@@ -453,7 +449,6 @@ int main()
 {
     float volume_value = 0.0f;
 
-    Timer1.start();
     uTimer.start();
     vTimer.start();
     wTimer.start();
@@ -495,7 +490,6 @@ int main()
 //      pc.printf("* vr1_ad=%4.2f, PWMDuty=%4.2f, Vpi=%4.2f, raw=%.3f, cur=%6.0f, tar=%6.0f\r", 
 //                   vr1_ad,       PWMDuty,       Vpi,       hcurr.raw, hcurr.current, hcurr.target);
         pc.printf("%4.1f,%4.1f,%3d\r", hcurr.target*0.001f, hcurr.current*0.001f, int(PWMDuty * 100));
-        // Timer_cnt_start = uTimer.read_us();     // カウンタ値
 #if 0
         if (fabs(vr1_ad) < 0.01f) {
             Speed_SET = 0.0f;
@@ -508,12 +502,6 @@ int main()
             Nrpm = 0;
             PWMDuty = 0;
 
-            Timer_cnt_C = 0;   /* キャプチャの値 */
-            Timer_cnt_A = 0;   /* キャプチャの値 */
-            Timer_cnt_B = 0;   /* キャプチャの値 */
-            Timer_cnt_C_1 = 0; /* キャプチャの値old */
-            Timer_cnt_A_1 = 0; /* キャプチャの値old */
-            Timer_cnt_B_1 = 0; /* キャプチャの値old */
             s_kiCurrent = 0;
             s_kiSpeed = 0;
             I_PI = 0;
